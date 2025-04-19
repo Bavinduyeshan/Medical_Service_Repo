@@ -10,10 +10,18 @@ import  com.Medical_Recirds2.MEdical.service.MedicalRecordService;
 import com.Medical_Recirds2.MEdical.service.PatientServiceClient;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
+import java.io.File;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.List;
+import java.util.UUID;
 
 @RestController
 @RequestMapping("/medical-records")
@@ -51,16 +59,87 @@ public class MedicalRecordsController {
 //        medicalRecordService.MedicalRecord(medicalRecords);
 //        return "medical record added succesfully";
 //    }
-@PostMapping("/add")
-public ResponseEntity<String> addMedicalRecord(@RequestBody Medical_Records medicalRecords) {
-    try {
-        String message = medicalRecordService.MedicalRecord(medicalRecords);
-        return ResponseEntity.ok(message);
-    } catch (Exception ex) {
-        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                .body("Error: " + ex.getMessage());
+
+
+
+    //correct down without report serrelcting from pc
+//@PostMapping("/add")
+//public ResponseEntity<String> addMedicalRecord(@RequestBody Medical_Records medicalRecords) {
+//    try {
+//        String message = medicalRecordService.MedicalRecord(medicalRecords);
+//        return ResponseEntity.ok(message);
+//    } catch (Exception ex) {
+//        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+//                .body("Error: " + ex.getMessage());
+//    }
+//}
+
+
+   // @PostMapping(value = "/add", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+//    public ResponseEntity<Medical_Records> addMedicalRecord(
+//            @RequestPart("record") Medical_Records record,
+//            @RequestPart(value = "report", required = false) MultipartFile report) throws IOException {
+//        if (report != null && !report.isEmpty()) {
+//            String fileName = UUID.randomUUID().toString() + "_" + report.getOriginalFilename();
+//            File uploadDir = new File("uploads");
+//            if (!uploadDir.exists()) {
+//                uploadDir.mkdirs();
+//            }
+//            File destFile = new File(uploadDir, fileName);
+//            System.out.println("Saving file to: " + destFile.getAbsolutePath());
+//            report.transferTo(destFile);
+//            System.out.println("File saved successfully: " + destFile.exists());
+//            record.setReportUrl("http://localhost:8081/uploads/" + fileName);
+//        }
+//
+//            // Save and get the actual saved record
+//            Medical_Records savedRecord = medicalRecordService.MedicalRecord(record);
+//            return ResponseEntity.ok(savedRecord);
+//
+//
+//    }
+
+
+    @PostMapping(value = "/add", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+
+    public ResponseEntity<Medical_Records> createMedicalRecord(
+            @RequestPart("record") Medical_Records record,
+            @RequestPart(value = "report", required = false) MultipartFile report) throws IOException {
+        if (report != null && !report.isEmpty()) {
+            // Define an absolute path for the uploads directory
+            String uploadDirPath = "E:/Digital health id system/MEdical/src/main/resources/uploads";            File uploadDir = new File(uploadDirPath);
+
+            // Ensure the directory exists
+            if (!uploadDir.exists()) {
+                boolean created = uploadDir.mkdirs();
+                if (!created) {
+                    throw new IOException("Failed to create upload directory: " + uploadDirPath);
+                }
+            }
+
+            // Generate a unique filename
+            String fileName = UUID.randomUUID().toString() + "_" + report.getOriginalFilename();
+            File destFile = new File(uploadDir, fileName);
+
+            // Log the save operation
+            System.out.println("Saving file to: " + destFile.getAbsolutePath());
+
+            // Transfer the file
+            report.transferTo(destFile);
+
+            // Verify the file was saved
+            if (destFile.exists()) {
+                System.out.println("File saved successfully: " + destFile.getAbsolutePath() + ", Size: " + destFile.length() + " bytes");
+            } else {
+                throw new IOException("File transfer failed: " + destFile.getAbsolutePath());
+            }
+
+            // Set the report URL
+            record.setReportUrl("/uploads/" + fileName);
+        }
+        Medical_Records savedRecord = medicalRecordService.MedicalRecord(record);
+        return ResponseEntity.ok(savedRecord);
     }
-}
 
     @GetMapping("/records/{patientId}")
     public PatientResponse getPatientMedicalData(@PathVariable int patientId) {
@@ -172,5 +251,12 @@ public List<Medical_Records> getMedicalRecordsByPatientId(@PathVariable int pati
     public ResponseEntity<Void> deleteMedicalRecord(@PathVariable Long id) {
         medicalRecordService.deleteMedicalrecord(id);
         return ResponseEntity.noContent().build();
+    }
+
+
+    @GetMapping("/count")
+    public  ResponseEntity<Long> getMedicalRecordCount(){
+        long count= medicalRecordService.medicalCount();
+        return  ResponseEntity.ok(count);
     }
 }

@@ -48,48 +48,90 @@ public class MedicalRecordService {
         return medicalRepositery.findByPatientID(patientId);
     }
 
-    @Transactional
-    public String MedicalRecord(Medical_Records medicalRecords) {
-        try {
+//    @Transactional
+//    public String MedicalRecord(Medical_Records medicalRecords) {
+//        try {
+//
+//            if (medicalRecords.getPatientID() == null) {
+//                throw new RuntimeException("Patient ID cannot be null");
+//            }
+//            if (medicalRecords.getDoctor_Id()==null){
+//                throw new RuntimeException("Doctor id cannot found");
+//            }
+//
+//            // Validate patient existence through the external service
+//            try {
+//                PatientResponse patientResponse = patientServiceClient.validatePatient(medicalRecords.getPatientID());
+//
+//            } catch (FeignException.NotFound e) {
+//                throw new RuntimeException("Requested Patient ID " + medicalRecords.getPatientID() + " does not exist.");
+//            }
+//            try {
+//
+//                DoctorResponse doctorResponse=doctorServiceClient.validateDoctor(medicalRecords.getDoctor_Id());
+//            } catch (FeignException.NotFound e) {
+//                throw new RuntimeException("Requested Doctor ID " + medicalRecords.getDoctor_Id() + " does not exist.");
+//            }
+//            // Find the Patient by ID
+////            Patient patient = patientRepositery.findById(medicalRecords.getPatientID())
+////                    .orElseThrow(() -> new RuntimeException("Patient not found with ID: " + medicalRecords.getPatientID()));
+//
+//            // Find the Disease by Name
+//            Disease disease = diseaseRepositery.findByName(medicalRecords.getName())
+//                    .orElseThrow(() -> new RuntimeException("Disease not found with name: " + medicalRecords.getName()));
+//
+//            // Set the patient and disease to the medical record
+//           // medicalRecords.setPatient(patient);
+//            medicalRecords.setDisease(disease);
+//
+//            // Save the medical record to the repository
+//            medicalRepositery.save(medicalRecords);
+//
+//            return "Medical record added successfully";
+//        } catch (Exception ex) {
+//            // Log the exception for more insight
+//            System.err.println("Error occurred: " + ex.getMessage());
+//            ex.printStackTrace();
+//            throw new RuntimeException("An error occurred while adding the medical record: " + ex.getMessage());
+//        }
+//    }
 
+
+
+    public Medical_Records MedicalRecord(Medical_Records medicalRecords) {
+        try {
             if (medicalRecords.getPatientID() == null) {
                 throw new RuntimeException("Patient ID cannot be null");
             }
-            if (medicalRecords.getDoctor_Id()==null){
-                throw new RuntimeException("Doctor id cannot found");
+            if (medicalRecords.getDoctor_Id() == null) {
+                throw new RuntimeException("Doctor ID cannot be null");
             }
 
             // Validate patient existence through the external service
             try {
                 PatientResponse patientResponse = patientServiceClient.validatePatient(medicalRecords.getPatientID());
-
             } catch (FeignException.NotFound e) {
                 throw new RuntimeException("Requested Patient ID " + medicalRecords.getPatientID() + " does not exist.");
             }
-            try {
 
-                DoctorResponse doctorResponse=doctorServiceClient.validateDoctor(medicalRecords.getDoctor_Id());
+            // Validate doctor existence through the external service
+            try {
+                DoctorResponse doctorResponse = doctorServiceClient.validateDoctor(medicalRecords.getDoctor_Id());
             } catch (FeignException.NotFound e) {
                 throw new RuntimeException("Requested Doctor ID " + medicalRecords.getDoctor_Id() + " does not exist.");
             }
-            // Find the Patient by ID
-//            Patient patient = patientRepositery.findById(medicalRecords.getPatientID())
-//                    .orElseThrow(() -> new RuntimeException("Patient not found with ID: " + medicalRecords.getPatientID()));
 
             // Find the Disease by Name
             Disease disease = diseaseRepositery.findByName(medicalRecords.getName())
                     .orElseThrow(() -> new RuntimeException("Disease not found with name: " + medicalRecords.getName()));
 
-            // Set the patient and disease to the medical record
-           // medicalRecords.setPatient(patient);
+            // Set the disease to the medical record
             medicalRecords.setDisease(disease);
 
-            // Save the medical record to the repository
-            medicalRepositery.save(medicalRecords);
+            // Save and return the medical record
+            return medicalRepositery.save(medicalRecords);
 
-            return "Medical record added successfully";
         } catch (Exception ex) {
-            // Log the exception for more insight
             System.err.println("Error occurred: " + ex.getMessage());
             ex.printStackTrace();
             throw new RuntimeException("An error occurred while adding the medical record: " + ex.getMessage());
@@ -200,5 +242,9 @@ public class MedicalRecordService {
          medicalRepositery.deleteById(id);
     }
 
+
+    public  long medicalCount(){
+        return  medicalRepositery.count();
+    }
 
 }
